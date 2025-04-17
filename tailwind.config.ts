@@ -61,6 +61,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				trading: {
+					blue: '#1e3a8a',
+					indigo: '#4338ca',
+					purple: '#6d28d9',
+					success: '#10b981',
+					danger: '#ef4444',
+					warning: '#f59e0b', 
+					'chart-bg': '#111827',
+					'chart-text': '#e5e7eb',
+					'chart-grid': '#374151'
 				}
 			},
 			borderRadius: {
