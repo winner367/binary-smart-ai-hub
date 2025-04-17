@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, UserRound, Lock, User, KeyRound, ChevronLeft } from "lucide-react";
+import { Sparkles, UserRound, Lock, User, KeyRound, ChevronLeft, ExternalLink } from "lucide-react";
+import { redirectToDerivLogin } from "@/services/deriv-auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -42,27 +43,17 @@ export default function LoginPage() {
 
   const handleUserLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a demo, so we'll just navigate to the trading page
-    // In a real app, you would authenticate with a backend
-    if (userEmail && userPassword) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      navigate("/trading");
-    } else {
-      toast({
-        title: "Login Failed",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
-    }
+    // Redirect to Deriv authorization instead of direct login
+    redirectToDerivLogin();
+    toast({
+      title: "Redirecting to Deriv",
+      description: "Please authenticate with your Deriv account.",
+    });
   };
 
   const handleUserRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a demo, so we'll just navigate to the trading page
-    // In a real app, you would register with a backend
+    // For registration, we also redirect to Deriv
     if (registerEmail && registerPassword && registerConfirmPassword) {
       if (registerPassword !== registerConfirmPassword) {
         toast({
@@ -72,11 +63,18 @@ export default function LoginPage() {
         });
         return;
       }
+      
+      // Store registration info in localStorage for reference after Deriv auth
+      localStorage.setItem("pending_registration", JSON.stringify({
+        email: registerEmail,
+        password: registerPassword
+      }));
+      
+      redirectToDerivLogin();
       toast({
-        title: "Registration Successful",
-        description: "Your account has been created. You can now trade!",
+        title: "Redirecting to Deriv",
+        description: "Please create or connect your Deriv account.",
       });
-      navigate("/trading");
     } else {
       toast({
         title: "Registration Failed",
@@ -165,7 +163,7 @@ export default function LoginPage() {
             <CardHeader>
               <CardTitle>User Account</CardTitle>
               <CardDescription>
-                Login to your existing account or register a new one to start trading.
+                Login to your existing account or register a new one to start trading with Deriv.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-3">
@@ -209,9 +207,13 @@ export default function LoginPage() {
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full">
-                      Sign in
+                    <Button type="submit" className="w-full flex items-center gap-2">
+                      <span>Sign in with Deriv</span>
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      You will be redirected to Deriv.com to complete your login
+                    </p>
                   </form>
                 </TabsContent>
                 <TabsContent value="register">
@@ -258,16 +260,20 @@ export default function LoginPage() {
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full">
-                      Create Account
+                    <Button type="submit" className="w-full flex items-center gap-2">
+                      <span>Create Account with Deriv</span>
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      You will be redirected to Deriv.com to authorize this application
+                    </p>
                   </form>
                 </TabsContent>
               </Tabs>
             </CardContent>
             <CardFooter className="border-t bg-muted/50 px-6 py-4">
               <p className="text-xs text-center w-full text-muted-foreground">
-                By signing up, you agree to our Terms of Service and Privacy Policy.
+                By signing up, you agree to our Terms of Service and Privacy Policy and authorize access to your Deriv account.
               </p>
             </CardFooter>
           </Card>

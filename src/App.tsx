@@ -10,6 +10,7 @@ import DashboardPage from "./pages/dashboard";
 import TradingPage from "./pages/trading";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/auth/login";
+import AuthCallbackPage from "./pages/auth/callback";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route
               path="/dashboard"
               element={
