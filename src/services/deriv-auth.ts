@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 // Constants for Deriv OAuth
 const DERIV_APP_ID = '71514'; // User's specific Deriv App ID
 const DERIV_OAUTH_URL = 'https://oauth.deriv.com/oauth2/authorize';
@@ -60,4 +58,3 @@ export const logoutDeriv = () => {
   localStorage.removeItem('deriv_token');
   // Any other cleanup needed
 };
-
