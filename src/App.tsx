@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,7 +26,7 @@ const ProtectedRoute = ({ children, path }: { children: React.ReactNode, path: s
   
   console.log("Protected Route Check:", { path, isAuthenticated, isAdmin });
   
-  // For admin routes
+  // Allow admins to access user routes
   if (path.startsWith('/admin') && !isAdmin) {
     console.log("Unauthorized admin access attempt, redirecting to login");
     return <Navigate to="/login" replace />;
@@ -36,6 +35,7 @@ const ProtectedRoute = ({ children, path }: { children: React.ReactNode, path: s
   // For user routes that require authentication
   if (!path.startsWith('/admin') && 
       !isAuthenticated && 
+      !isAdmin && // Allow admins to bypass Deriv auth
       path !== '/login' &&
       path !== '/' &&
       !path.startsWith('/auth')) {
