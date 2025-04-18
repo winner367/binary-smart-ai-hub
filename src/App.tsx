@@ -27,6 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   // For admin routes
   if (window.location.pathname.startsWith('/admin') && !isAdmin) {
+    console.log("Unauthorized admin access attempt, redirecting to login");
     return <Navigate to="/login" />;
   }
   
@@ -36,6 +37,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       window.location.pathname !== '/login' &&
       window.location.pathname !== '/' &&
       !window.location.pathname.startsWith('/auth')) {
+    console.log("Unauthorized user access attempt, redirecting to login");
     return <Navigate to="/login" />;
   }
   
@@ -148,6 +150,26 @@ const App = () => {
                 <ProtectedRoute>
                   <AppLayout>
                     <AdminUsers />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/activity"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AdminDashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AdminDashboard />
                   </AppLayout>
                 </ProtectedRoute>
               }

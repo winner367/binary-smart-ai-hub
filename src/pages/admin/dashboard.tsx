@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -14,11 +15,20 @@ import {
   Settings,
   Shield,
   AlertTriangle,
+  Bell,
+  UserCheck,
+  UserX,
+  Clock,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TradingChart } from "@/components/trading/chart";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   // Mock data for admin dashboard
   const [stats, setStats] = useState({
     totalUsers: 127,
@@ -30,6 +40,13 @@ export default function AdminDashboard() {
     systemStatus: "Operational",
     alertsCount: 3,
   });
+
+  // Mock alerts for admin
+  const [alerts, setAlerts] = useState([
+    { id: 1, type: 'system', message: 'System maintenance scheduled for 2025-05-01', read: false },
+    { id: 2, type: 'user', message: 'Unusual activity detected on user ID #45892', read: false },
+    { id: 3, type: 'security', message: 'Multiple failed login attempts from IP 192.168.1.134', read: false },
+  ]);
 
   // Mock chart data
   const generateChartData = (days: number = 30) => {
@@ -46,6 +63,59 @@ export default function AdminDashboard() {
   };
 
   const [chartData, setChartData] = useState(generateChartData());
+  const [showAlerts, setShowAlerts] = useState(false);
+
+  // Handle navigation to other admin pages
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  // Handle card click for user management
+  const handleUserManagementClick = () => {
+    navigate('/admin/users');
+  };
+
+  // Handle card click for activity logs
+  const handleActivityLogsClick = () => {
+    toast({
+      title: "Activity Logs",
+      description: "Loading activity logs...",
+    });
+    navigate('/admin/activity');
+  };
+
+  // Handle card click for system settings
+  const handleSystemSettingsClick = () => {
+    toast({
+      title: "System Settings",
+      description: "Opening system settings...",
+    });
+    navigate('/admin/settings');
+  };
+
+  // Handle alert click
+  const handleAlertClick = (alertId: number) => {
+    // Mark alert as read
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId ? { ...alert, read: true } : alert
+    ));
+    
+    // Update alert count
+    setStats(prev => ({
+      ...prev,
+      alertsCount: prev.alertsCount - 1
+    }));
+    
+    toast({
+      title: "Alert acknowledged",
+      description: "The alert has been marked as read",
+    });
+  };
+
+  // Toggle alerts panel
+  const handleToggleAlerts = () => {
+    setShowAlerts(!showAlerts);
+  };
 
   return (
     <div className="container py-8 space-y-8">
@@ -56,12 +126,52 @@ export default function AdminDashboard() {
             <span className="h-2 w-2 bg-green-500 rounded-full"></span>
             <span className="text-sm font-medium">System: {stats.systemStatus}</span>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleToggleAlerts}>
             <AlertTriangle className="h-4 w-4" />
             <span>Alerts ({stats.alertsCount})</span>
           </Button>
         </div>
       </div>
+
+      {/* Alerts Panel (conditionally rendered) */}
+      {showAlerts && (
+        <Card className="border-amber-200">
+          <CardHeader className="bg-amber-50">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              System Alerts
+            </CardTitle>
+            <CardDescription>
+              Recent alerts that require your attention
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {alerts.filter(alert => !alert.read).map(alert => (
+              <div key={alert.id} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    {alert.type === 'system' && <Settings className="h-4 w-4 text-amber-500" />}
+                    {alert.type === 'user' && <Users className="h-4 w-4 text-blue-500" />}
+                    {alert.type === 'security' && <Shield className="h-4 w-4 text-red-500" />}
+                    <span className="font-medium capitalize">{alert.type} Alert</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleAlertClick(alert.id)}
+                >
+                  Acknowledge
+                </Button>
+              </div>
+            ))}
+            {alerts.filter(alert => !alert.read).length === 0 && (
+              <p className="py-4 text-center text-muted-foreground">No unread alerts</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -118,13 +228,26 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Analytics Chart */}
+      {/* User Activity Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Platform Analytics
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Platform Analytics
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1">
+                <Filter className="h-3 w-3" />
+                <span>Filter</span>
+              </Button>
+              <select className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <option>Last 30 days</option>
+                <option>Last 7 days</option>
+                <option>Last 24 hours</option>
+              </select>
+            </div>
+          </div>
           <CardDescription>User activity and trading volume over the last 30 days</CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,9 +263,12 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      {/* Quick Action Cards */}
+      {/* User Management Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover:bg-muted/40 transition-colors cursor-pointer">
+        <Card 
+          className="hover:bg-muted/40 transition-colors cursor-pointer"
+          onClick={handleUserManagementClick}
+        >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="bg-primary/10 p-3 rounded-full">
@@ -156,7 +282,10 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:bg-muted/40 transition-colors cursor-pointer">
+        <Card 
+          className="hover:bg-muted/40 transition-colors cursor-pointer"
+          onClick={handleActivityLogsClick}
+        >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="bg-primary/10 p-3 rounded-full">
@@ -170,7 +299,10 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:bg-muted/40 transition-colors cursor-pointer">
+        <Card 
+          className="hover:bg-muted/40 transition-colors cursor-pointer"
+          onClick={handleSystemSettingsClick}
+        >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="bg-primary/10 p-3 rounded-full">
@@ -184,6 +316,72 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Recent User Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Recent User Actions
+          </CardTitle>
+          <CardDescription>Latest activity from your users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <UserCheck className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium">New user registration</p>
+                  <p className="text-sm text-muted-foreground">john.doe@example.com</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">5 mins ago</p>
+            </div>
+            
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 p-2 rounded-full">
+                  <Activity className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Successful trade completed</p>
+                  <p className="text-sm text-muted-foreground">User #45128 • BTC/USD</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">12 mins ago</p>
+            </div>
+            
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-100 p-2 rounded-full">
+                  <Settings className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Account settings updated</p>
+                  <p className="text-sm text-muted-foreground">User #23015</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">28 mins ago</p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 p-2 rounded-full">
+                  <UserX className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Account deactivation</p>
+                  <p className="text-sm text-muted-foreground">User #10983</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">45 mins ago</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

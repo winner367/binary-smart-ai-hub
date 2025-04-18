@@ -10,11 +10,13 @@ export default function AuthCallbackPage() {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
 
   useEffect(() => {
-    const handleCallback = () => {
+    const handleCallback = async () => {
       try {
         // Extract the token from the URL hash or search params
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
+        
+        console.log("Auth callback received, token present:", !!token);
         
         if (!token) {
           throw new Error('No token found in the callback URL');
@@ -29,7 +31,15 @@ export default function AuthCallbackPage() {
           description: 'You have successfully connected with Deriv',
         });
         
-        // Redirect to trading page after a short delay
+        // Check if there was a pending registration
+        const pendingRegistration = localStorage.getItem('pending_registration');
+        if (pendingRegistration) {
+          console.log("Completing registration process");
+          // Registration complete, remove the pending data
+          localStorage.removeItem('pending_registration');
+        }
+        
+        // Redirect to dashboard after a short delay
         setTimeout(() => {
           navigate('/dashboard');
         }, 1500);

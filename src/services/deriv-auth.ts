@@ -2,7 +2,7 @@
 // Constants for Deriv OAuth
 const DERIV_APP_ID = '71514'; // User's specific Deriv App ID
 const DERIV_OAUTH_URL = 'https://oauth.deriv.com/oauth2/authorize';
-const REDIRECT_URI = window.location.origin + '/auth/callback';
+const REDIRECT_URI = 'https://2b43-102-219-210-201.ngrok-free.app/auth/callback';
 const DERIV_API_URL = 'wss://ws.binaryws.com/websockets/v3';
 
 // List of scopes we want to request from the user
@@ -60,6 +60,7 @@ export const logoutDeriv = () => {
   localStorage.removeItem('deriv_token');
   localStorage.removeItem('deriv_accounts');
   localStorage.removeItem('deriv_user_info');
+  localStorage.removeItem('isAdmin');
   // Any other cleanup needed
 };
 
@@ -80,6 +81,7 @@ export const fetchUserAccounts = async (token: string) => {
     
     socket.onmessage = (msg) => {
       const response = JSON.parse(msg.data);
+      console.log('WebSocket response:', response);
       
       // Handle authorization response
       if (response.msg_type === 'authorize') {
@@ -90,6 +92,7 @@ export const fetchUserAccounts = async (token: string) => {
         
         // Store user info
         localStorage.setItem('deriv_user_info', JSON.stringify(response.authorize));
+        console.log('User authorized successfully:', response.authorize);
         
         // Request account list
         socket.send(JSON.stringify({
@@ -103,6 +106,8 @@ export const fetchUserAccounts = async (token: string) => {
           console.error('Account list error:', response.error);
           return;
         }
+        
+        console.log('Received accounts:', response.account_list);
         
         // Store accounts information
         localStorage.setItem('deriv_accounts', JSON.stringify(response.account_list));
@@ -122,6 +127,8 @@ export const fetchUserAccounts = async (token: string) => {
           console.error('Balance error:', response.error);
           return;
         }
+        
+        console.log('Balance for account:', response.balance);
         
         // Update account with balance information
         const accounts = JSON.parse(localStorage.getItem('deriv_accounts') || '[]');
