@@ -30,7 +30,7 @@ const ProtectedRoute = ({ children, path }: { children: React.ReactNode, path: s
   // For admin routes
   if (path.startsWith('/admin') && !isAdmin) {
     console.log("Unauthorized admin access attempt, redirecting to login");
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
   // For user routes that require authentication
@@ -40,7 +40,7 @@ const ProtectedRoute = ({ children, path }: { children: React.ReactNode, path: s
       path !== '/' &&
       !path.startsWith('/auth')) {
     console.log("Unauthorized user access attempt, redirecting to login");
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
   return <>{children}</>;
@@ -56,9 +56,22 @@ const App = () => {
       setIsLoggedIn(isDerivAuthenticated());
     };
     
+    // Check login status initially
+    checkLoginStatus();
+    
+    // Setup event listener for storage changes
     window.addEventListener('storage', checkLoginStatus);
+    
+    // Custom event for auth status changes
+    const handleAuthEvent = () => {
+      checkLoginStatus();
+    };
+    
+    window.addEventListener('authStatusChanged', handleAuthEvent);
+    
     return () => {
       window.removeEventListener('storage', checkLoginStatus);
+      window.removeEventListener('authStatusChanged', handleAuthEvent);
     };
   }, []);
   
@@ -70,7 +83,9 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={
+              isLoggedIn ? <Navigate to="/dashboard" replace /> : <LoginPage />
+            } />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             
             {/* User routes - protected */}

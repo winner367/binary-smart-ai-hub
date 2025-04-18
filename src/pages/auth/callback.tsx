@@ -27,6 +27,9 @@ export default function AuthCallbackPage() {
         console.log("Token processed successfully:", result);
         setStatus('success');
         
+        // Ensure the authentication state is properly set
+        localStorage.setItem('isDerivAuthenticated', 'true');
+        
         toast({
           title: 'Login Successful',
           description: 'You have successfully connected with Deriv',
@@ -56,9 +59,13 @@ export default function AuthCallbackPage() {
           variant: 'destructive',
         });
         
+        // Clear any auth data that might be present
+        localStorage.removeItem('isDerivAuthenticated');
+        localStorage.removeItem('deriv_token');
+        
         // Redirect to login page after a short delay
         setTimeout(() => {
-          navigate('/login');
+          window.location.href = '/login';
         }, 3000);
       }
     };
