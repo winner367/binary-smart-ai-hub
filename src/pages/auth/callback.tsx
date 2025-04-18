@@ -31,7 +31,7 @@ export default function AuthCallbackPage() {
         
         // Redirect to trading page after a short delay
         setTimeout(() => {
-          navigate('/trading');
+          navigate('/dashboard');
         }, 1500);
         
       } catch (error) {
@@ -74,7 +74,7 @@ export default function AuthCallbackPage() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Authentication Successful</h2>
             <p className="text-muted-foreground">You have successfully connected with Deriv.</p>
-            <p className="text-muted-foreground mt-2">Redirecting to your trading dashboard...</p>
+            <p className="text-muted-foreground mt-2">Redirecting to your dashboard...</p>
           </>
         )}
         

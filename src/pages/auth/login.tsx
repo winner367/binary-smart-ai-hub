@@ -11,6 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, UserRound, Lock, User, KeyRound, ChevronLeft, ExternalLink } from "lucide-react";
 import { redirectToDerivLogin } from "@/services/deriv-auth";
 
+// Admin credentials - hardcoded for security
+const ADMIN_EMAIL = "williamsamoe2023@gmail.com";
+const ADMIN_PASSWORD = "12345678";
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -24,18 +28,19 @@ export default function LoginPage() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a demo, so we'll just navigate to the dashboard
-    // In a real app, you would authenticate with a backend
-    if (adminEmail && adminPassword) {
+    // Check against hardcoded admin credentials
+    if (adminEmail === ADMIN_EMAIL && adminPassword === ADMIN_PASSWORD) {
       toast({
         title: "Admin Login Successful",
         description: "Welcome back, admin!",
       });
-      navigate("/dashboard");
+      // Store admin status in localStorage
+      localStorage.setItem("isAdmin", "true");
+      navigate("/admin/dashboard");
     } else {
       toast({
-        title: "Login Failed",
-        description: "Please enter both email and password.",
+        title: "Admin Login Failed",
+        description: "Invalid email or password.",
         variant: "destructive",
       });
     }
@@ -43,7 +48,7 @@ export default function LoginPage() {
 
   const handleUserLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Redirect to Deriv authorization instead of direct login
+    // Redirect to Deriv authorization
     redirectToDerivLogin();
     toast({
       title: "Redirecting to Deriv",
