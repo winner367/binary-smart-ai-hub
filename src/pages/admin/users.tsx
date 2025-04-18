@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,18 +45,78 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
+  Mail,
+  Wallet,
+  RefreshCw
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { getDerivAccounts } from "@/services/deriv-auth";
+
+// Enhanced user data structure
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: "active" | "inactive" | "suspended";
+  accountType: "real" | "demo" | "both";
+  registeredDate: string;
+  lastLogin: string;
+  profit: number;
+  balance?: {
+    real?: number;
+    demo?: number;
+  };
+  currency?: string;
+}
 
 // Mock user data
-const generateMockUsers = () => {
+const generateMockUsers = (): User[] => {
   const users = [];
-  const statuses = ["active", "inactive", "suspended"];
-  const accountTypes = ["real", "demo", "both"];
+  const statuses = ["active", "inactive", "suspended"] as const;
+  const accountTypes = ["real", "demo", "both"] as const;
   
-  for (let i = 1; i <= 50; i++) {
+  // Get real accounts from Deriv if available
+  const derivAccounts = getDerivAccounts();
+  let derivEmail = "";
+  
+  if (derivAccounts.length > 0) {
+    // Try to extract email from account data
+    const firstAccount = derivAccounts[0];
+    if (firstAccount.email) {
+      derivEmail = firstAccount.email;
+    }
+  }
+  
+  // Add the current user first if they have Deriv accounts
+  if (derivAccounts.length > 0) {
+    const demoBalance = derivAccounts.find(acc => acc.account_type === "demo")?.balance || 0;
+    const realBalance = derivAccounts.find(acc => acc.account_type === "real")?.balance || 0;
+    const currency = derivAccounts.find(acc => acc.currency)?.currency || "USD";
+    
+    users.push({
+      id: `current-user-${Date.now()}`,
+      name: "Current User",
+      email: derivEmail || "current.user@example.com",
+      status: "active",
+      accountType: demoBalance && realBalance ? "both" : (realBalance ? "real" : "demo"),
+      registeredDate: new Date().toISOString().split('T')[0],
+      lastLogin: new Date().toISOString().split('T')[0],
+      profit: Math.floor(Math.random() * 1000) - 200,
+      balance: {
+        real: realBalance,
+        demo: demoBalance
+      },
+      currency
+    });
+  }
+  
+  // Add mock users
+  for (let i = 1; i <= 20; i++) {
+    const randomCurrency = ["USD", "EUR", "GBP"][Math.floor(Math.random() * 3)];
     users.push({
       id: `user-${i}`,
       name: `User ${i}`,
@@ -56,6 +126,11 @@ const generateMockUsers = () => {
       registeredDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
       lastLogin: new Date(2023, 11, Math.floor(Math.random() * 31) + 1).toISOString().split('T')[0],
       profit: Math.floor(Math.random() * 10000) - 2000,
+      balance: {
+        real: Math.floor(Math.random() * 5000) + 100,
+        demo: Math.floor(Math.random() * 10000) + 1000
+      },
+      currency: randomCurrency
     });
   }
   
@@ -63,11 +138,22 @@ const generateMockUsers = () => {
 };
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(generateMockUsers());
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    accountType: "demo" as const
+  });
+  const [openDialog, setOpenDialog] = useState(false);
   const { toast } = useToast();
+  
+  // Initialize users on component mount
+  useEffect(() => {
+    setUsers(generateMockUsers());
+  }, []);
   
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
@@ -115,6 +201,59 @@ export default function AdminUsers() {
     setUsers(updatedUsers);
   };
 
+  // Add new user
+  const handleAddUser = () => {
+    if (newUser.name.trim() === "" || newUser.email.trim() === "") {
+      toast({
+        title: "Validation Error",
+        description: "Name and email are required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newUserObject = {
+      id: `user-${Date.now()}`,
+      name: newUser.name,
+      email: newUser.email,
+      status: "active" as const,
+      accountType: newUser.accountType,
+      registeredDate: new Date().toISOString().split('T')[0],
+      lastLogin: "-",
+      profit: 0,
+      balance: {
+        real: 0,
+        demo: newUser.accountType === "demo" || newUser.accountType === "both" ? 10000 : 0
+      },
+      currency: "USD"
+    };
+
+    setUsers(prevUsers => [newUserObject, ...prevUsers]);
+    
+    toast({
+      title: "User Added",
+      description: `${newUser.name} has been added to the system.`,
+    });
+    
+    // Reset form
+    setNewUser({
+      name: "",
+      email: "",
+      accountType: "demo"
+    });
+    
+    setOpenDialog(false);
+  };
+  
+  // Refresh user list
+  const refreshUsers = () => {
+    setUsers(generateMockUsers());
+    toast({
+      title: "User List Refreshed",
+      description: "Latest user data has been loaded.",
+    });
+  };
+
   return (
     <div className="container py-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -123,8 +262,68 @@ export default function AdminUsers() {
           User Management
         </h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={refreshUsers} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
           <Button variant="outline">Export Users</Button>
-          <Button>Add User</Button>
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New User</DialogTitle>
+                <DialogDescription>
+                  Create a new user account. The user will need to authenticate with Deriv to access the platform.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input 
+                    id="name" 
+                    placeholder="Enter user name"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="email" 
+                      className="pl-10"
+                      placeholder="user@example.com"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="account-type">Account Type</Label>
+                  <select 
+                    id="account-type"
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                    value={newUser.accountType}
+                    onChange={(e) => setNewUser({...newUser, accountType: e.target.value as "demo" | "real" | "both"})}
+                  >
+                    <option value="demo">Demo</option>
+                    <option value="real">Real</option>
+                    <option value="both">Both (Demo & Real)</option>
+                  </select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancel</Button>
+                <Button onClick={handleAddUser}>Create User</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       
@@ -153,8 +352,10 @@ export default function AdminUsers() {
                   <TableHead>User</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Account Type</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Last Login</TableHead>
+                  <TableHead>Balances</TableHead>
                   <TableHead>Profit/Loss</TableHead>
                   <TableHead>Access</TableHead>
                   <TableHead></TableHead>
@@ -166,7 +367,6 @@ export default function AdminUsers() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -181,11 +381,33 @@ export default function AdminUsers() {
                       </Badge>
                     </TableCell>
                     <TableCell>{user.accountType}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm">{user.email}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{user.registeredDate}</TableCell>
                     <TableCell>{user.lastLogin}</TableCell>
                     <TableCell>
+                      <div className="space-y-1">
+                        {user.balance?.real !== undefined && (
+                          <div className="flex items-center text-sm">
+                            <Badge variant="outline" className="bg-green-50">Real</Badge>
+                            <span className="ml-2">{user.balance.real} {user.currency}</span>
+                          </div>
+                        )}
+                        {user.balance?.demo !== undefined && (
+                          <div className="flex items-center text-sm">
+                            <Badge variant="outline" className="bg-blue-50">Demo</Badge>
+                            <span className="ml-2">{user.balance.demo} {user.currency}</span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <span className={user.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {user.profit >= 0 ? '+' : ''}{user.profit} USD
+                        {user.profit >= 0 ? '+' : ''}{user.profit} {user.currency || "USD"}
                       </span>
                     </TableCell>
                     <TableCell>

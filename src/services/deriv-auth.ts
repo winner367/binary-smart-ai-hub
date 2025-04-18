@@ -2,7 +2,8 @@
 // Constants for Deriv OAuth
 const DERIV_APP_ID = '71514'; // User's specific Deriv App ID
 const DERIV_OAUTH_URL = 'https://oauth.deriv.com/oauth2/authorize';
-const REDIRECT_URI = 'https://2b43-102-219-210-201.ngrok-free.app/auth/callback';
+// Update to use window.location.origin to dynamically get the current domain
+const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 const DERIV_API_URL = 'wss://ws.binaryws.com/websockets/v3';
 
 // List of scopes we want to request from the user
@@ -25,6 +26,8 @@ export const redirectToDerivLogin = () => {
   url.searchParams.append('redirect_uri', REDIRECT_URI);
   url.searchParams.append('scope', SCOPES.join(' '));
   
+  console.log("Redirecting to Deriv with URI:", REDIRECT_URI);
+  
   // Redirect to Deriv OAuth page
   window.location.href = url.toString();
 };
@@ -37,8 +40,13 @@ export const processDerivToken = (token: string) => {
   // Store the token in localStorage for future API calls
   localStorage.setItem('deriv_token', token);
   
+  // Store authentication state
+  localStorage.setItem('isDerivAuthenticated', 'true');
+  
   // Fetch user account information after successful login
   fetchUserAccounts(token);
+  
+  console.log("Deriv token processed and stored");
   
   return {
     isAuthenticated: true,
@@ -50,7 +58,7 @@ export const processDerivToken = (token: string) => {
  * Check if the user is authenticated with Deriv
  */
 export const isDerivAuthenticated = (): boolean => {
-  return !!localStorage.getItem('deriv_token');
+  return localStorage.getItem('isDerivAuthenticated') === 'true';
 };
 
 /**
@@ -61,6 +69,7 @@ export const logoutDeriv = () => {
   localStorage.removeItem('deriv_accounts');
   localStorage.removeItem('deriv_user_info');
   localStorage.removeItem('isAdmin');
+  localStorage.removeItem('isDerivAuthenticated');
   // Any other cleanup needed
 };
 
@@ -73,6 +82,7 @@ export const fetchUserAccounts = async (token: string) => {
     const socket = new WebSocket(DERIV_API_URL);
     
     socket.onopen = () => {
+      console.log("WebSocket opened for account fetching");
       // First authorize with the token
       socket.send(JSON.stringify({
         authorize: token

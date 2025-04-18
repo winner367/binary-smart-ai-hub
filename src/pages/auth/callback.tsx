@@ -23,7 +23,8 @@ export default function AuthCallbackPage() {
         }
         
         // Process the token
-        processDerivToken(token);
+        const result = processDerivToken(token);
+        console.log("Token processed successfully:", result);
         setStatus('success');
         
         toast({
@@ -39,9 +40,9 @@ export default function AuthCallbackPage() {
           localStorage.removeItem('pending_registration');
         }
         
-        // Redirect to dashboard after a short delay
+        // Force a window.location redirect instead of using navigate to ensure complete page reload
         setTimeout(() => {
-          navigate('/dashboard');
+          window.location.href = '/dashboard';
         }, 1500);
         
       } catch (error) {

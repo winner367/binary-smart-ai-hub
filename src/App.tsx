@@ -21,22 +21,24 @@ import { useEffect, useState } from "react";
 const queryClient = new QueryClient();
 
 // Protected Route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children, path }: { children: React.ReactNode, path: string }) => {
   const isAuthenticated = isDerivAuthenticated();
   const isAdmin = localStorage.getItem("isAdmin") === "true";
   
+  console.log("Protected Route Check:", { path, isAuthenticated, isAdmin });
+  
   // For admin routes
-  if (window.location.pathname.startsWith('/admin') && !isAdmin) {
+  if (path.startsWith('/admin') && !isAdmin) {
     console.log("Unauthorized admin access attempt, redirecting to login");
     return <Navigate to="/login" />;
   }
   
-  // For user routes
-  if (!window.location.pathname.startsWith('/admin') && 
+  // For user routes that require authentication
+  if (!path.startsWith('/admin') && 
       !isAuthenticated && 
-      window.location.pathname !== '/login' &&
-      window.location.pathname !== '/' &&
-      !window.location.pathname.startsWith('/auth')) {
+      path !== '/login' &&
+      path !== '/' &&
+      !path.startsWith('/auth')) {
     console.log("Unauthorized user access attempt, redirecting to login");
     return <Navigate to="/login" />;
   }
@@ -75,7 +77,7 @@ const App = () => {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/dashboard">
                   <AppLayout>
                     <DashboardPage />
                   </AppLayout>
@@ -85,7 +87,7 @@ const App = () => {
             <Route
               path="/trading"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/trading">
                   <AppLayout>
                     <TradingPage />
                   </AppLayout>
@@ -95,7 +97,7 @@ const App = () => {
             <Route
               path="/signals"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/signals">
                   <AppLayout>
                     <DashboardPage />
                   </AppLayout>
@@ -105,7 +107,7 @@ const App = () => {
             <Route
               path="/history"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/history">
                   <AppLayout>
                     <DashboardPage />
                   </AppLayout>
@@ -115,7 +117,7 @@ const App = () => {
             <Route
               path="/binarybot"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/binarybot">
                   <AppLayout>
                     <BinaryBotPage />
                   </AppLayout>
@@ -125,7 +127,7 @@ const App = () => {
             <Route
               path="/performance"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/performance">
                   <AppLayout>
                     <PerformanceAnalysis />
                   </AppLayout>
@@ -137,7 +139,7 @@ const App = () => {
             <Route
               path="/admin/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/admin/dashboard">
                   <AppLayout>
                     <AdminDashboard />
                   </AppLayout>
@@ -147,7 +149,7 @@ const App = () => {
             <Route
               path="/admin/users"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/admin/users">
                   <AppLayout>
                     <AdminUsers />
                   </AppLayout>
@@ -157,7 +159,7 @@ const App = () => {
             <Route
               path="/admin/activity"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/admin/activity">
                   <AppLayout>
                     <AdminDashboard />
                   </AppLayout>
@@ -167,7 +169,7 @@ const App = () => {
             <Route
               path="/admin/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute path="/admin/settings">
                   <AppLayout>
                     <AdminDashboard />
                   </AppLayout>
