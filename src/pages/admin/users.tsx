@@ -56,7 +56,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { getDerivAccounts } from "@/services/deriv-auth";
 
-// Enhanced user data structure
+// Enhanced user data structure with proper type definitions
 interface User {
   id: string;
   name: string;
@@ -73,11 +73,17 @@ interface User {
   currency?: string;
 }
 
+interface NewUserInput {
+  name: string;
+  email: string;
+  accountType: "real" | "demo" | "both";
+}
+
 // Mock user data
 const generateMockUsers = (): User[] => {
-  const users = [];
-  const statuses = ["active", "inactive", "suspended"] as const;
-  const accountTypes = ["real", "demo", "both"] as const;
+  const users: User[] = [];
+  const statuses: Array<"active" | "inactive" | "suspended"> = ["active", "inactive", "suspended"];
+  const accountTypes: Array<"real" | "demo" | "both"> = ["real", "demo", "both"];
   
   // Get real accounts from Deriv if available
   const derivAccounts = getDerivAccounts();
@@ -117,12 +123,15 @@ const generateMockUsers = (): User[] => {
   // Add mock users
   for (let i = 1; i <= 20; i++) {
     const randomCurrency = ["USD", "EUR", "GBP"][Math.floor(Math.random() * 3)];
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    const randomAccountType = accountTypes[Math.floor(Math.random() * accountTypes.length)];
+    
     users.push({
       id: `user-${i}`,
       name: `User ${i}`,
       email: `user${i}@example.com`,
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      accountType: accountTypes[Math.floor(Math.random() * accountTypes.length)],
+      status: randomStatus,
+      accountType: randomAccountType,
       registeredDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
       lastLogin: new Date(2023, 11, Math.floor(Math.random() * 31) + 1).toISOString().split('T')[0],
       profit: Math.floor(Math.random() * 10000) - 2000,
@@ -142,10 +151,10 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<NewUserInput>({
     name: "",
     email: "",
-    accountType: "demo" as const
+    accountType: "demo"
   });
   const [openDialog, setOpenDialog] = useState(false);
   const { toast } = useToast();
@@ -171,7 +180,7 @@ export default function AdminUsers() {
   
   // Handle user status change
   const toggleUserStatus = (userId: string) => {
-    const updatedUsers = users.map(user => {
+    setUsers(prevUsers => prevUsers.map(user => {
       if (user.id === userId) {
         const newStatus = user.status === 'active' ? 'suspended' : 'active';
         toast({
@@ -179,12 +188,10 @@ export default function AdminUsers() {
           description: `${user.name} has been ${newStatus === 'active' ? 'activated' : 'suspended'}.`,
           variant: newStatus === 'active' ? 'default' : 'destructive',
         });
-        return { ...user, status: newStatus };
+        return { ...user, status: newStatus as "active" | "inactive" | "suspended" };
       }
       return user;
-    });
-    
-    setUsers(updatedUsers);
+    }));
   };
   
   // Delete user
@@ -197,8 +204,7 @@ export default function AdminUsers() {
       variant: "destructive",
     });
     
-    const updatedUsers = users.filter(user => user.id !== userId);
-    setUsers(updatedUsers);
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
   };
 
   // Add new user
@@ -212,18 +218,18 @@ export default function AdminUsers() {
       return;
     }
 
-    const newUserObject = {
+    const newUserObject: User = {
       id: `user-${Date.now()}`,
       name: newUser.name,
       email: newUser.email,
-      status: "active" as const,
+      status: "active",
       accountType: newUser.accountType,
       registeredDate: new Date().toISOString().split('T')[0],
       lastLogin: "-",
       profit: 0,
       balance: {
-        real: 0,
-        demo: newUser.accountType === "demo" || newUser.accountType === "both" ? 10000 : 0
+        real: newUser.accountType === "real" || newUser.accountType === "both" ? 0 : undefined,
+        demo: newUser.accountType === "demo" || newUser.accountType === "both" ? 10000 : undefined
       },
       currency: "USD"
     };

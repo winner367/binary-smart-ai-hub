@@ -40,8 +40,9 @@ export default function AuthCallbackPage() {
           localStorage.removeItem('pending_registration');
         }
         
-        // Force a window.location redirect instead of using navigate to ensure complete page reload
+        // Use a small delay then redirect to ensure the toast is visible
         setTimeout(() => {
+          // Force a complete window.location redirect instead of using React Router navigate
           window.location.href = '/dashboard';
         }, 1500);
         
